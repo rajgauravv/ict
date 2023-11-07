@@ -23,7 +23,6 @@ class IceCreamFlavor(models.Model):
     """
     To manage different ice creams with flavors, currently we have
     Chocolate, Pistachio, Strawberry and Mint.
-    # TODO : Add more flavor and get flavor ice cream data
     """
     ice_cream = models.ForeignKey(IceCream, on_delete=models.CASCADE, related_name='flavors')
     name = models.CharField(max_length=50)
