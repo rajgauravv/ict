@@ -40,7 +40,7 @@ class CustomerList(APIView):
                     customer = Customer.objects.filter(user_id=user.id).last()
                     return Response({"message": "User with this phone number already exists.",
                                     "customer_id": customer.id},
-                                    status=status.HTTP_400_BAD_REQUEST)
+                                    status=status.HTTP_200_OK)
 
                 user.set_password(user_data['password'])
                 user.save()

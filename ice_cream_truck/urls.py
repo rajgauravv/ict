@@ -16,11 +16,9 @@ Including another URLconf
 """
 
 from rest_framework.routers import DefaultRouter
-from .views import IceCreamViewSet,ShavedIceViewSet,SnackBarViewSet
+from .views import BaseIceCreamTruckViewSet
 
 router = DefaultRouter()
-router.register(r'ice_creams', IceCreamViewSet)
-router.register(r'shaved_ice', ShavedIceViewSet)
-router.register(r'snack_bars', SnackBarViewSet)
+router.register(r'ict', BaseIceCreamTruckViewSet)
 
 urlpatterns = router.urls

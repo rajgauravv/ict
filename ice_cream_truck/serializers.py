@@ -1,20 +1,15 @@
 from rest_framework import serializers
-from .models import IceCream, ShavedIce, SnackBar
+from .models import *
 
 
-class IceCreamSerializer(serializers.ModelSerializer):
+class FlavorSerializer(serializers.ModelSerializer):
     class Meta:
-        model = IceCream
+        model = Flavor
         fields = '__all__'
 
 
-class ShavedIceSerializer(serializers.ModelSerializer):
+class BaseIceCreamTruckItemFieldsSerializer(serializers.ModelSerializer):
     class Meta:
-        model = ShavedIce
+        model = BaseIceCreamTruckItemFields
         fields = '__all__'
 
-
-class SnackBarSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = SnackBar
-        fields = '__all__'
