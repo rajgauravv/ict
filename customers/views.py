@@ -1,3 +1,5 @@
+from django.contrib.auth.models import User
+from django.db import transaction
 from django.shortcuts import render
 
 # Create your views here.
@@ -6,6 +8,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from .models import Customer
 from .serializers import CustomerSerializer
+from django.http import JsonResponse
 
 
 class CustomerList(APIView):
@@ -15,11 +18,55 @@ class CustomerList(APIView):
         return Response(serializer.data)
 
     def post(self, request):
-        serializer = CustomerSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        customer_data = {
+            'first_name': request.data.get('first_name'),
+            'last_name': request.data.get('last_name', ''),
+            'email': request.data.get('email', ''),
+            'phone_number': request.data.get('phone_number'),
+            'address': request.data.get('address', ''),
+        }
+        try:
+            # Create a new User
+            user_data = {
+                'username': request.data.get('phone_number'),
+                'password': request.data.get('phone_number'),
+                # Add other user-related fields if needed
+            }
+
+            # Use a database transaction to ensure data consistency
+            with transaction.atomic():
+                user, created = User.objects.get_or_create(username=user_data['username'])
+                if not created:
+                    customer = Customer.objects.filter(user_id=user.id).last()
+                    return Response({"message": "User with this phone number already exists.",
+                                    "customer_id": customer.id},
+                                    status=status.HTTP_400_BAD_REQUEST)
+
+                user.set_password(user_data['password'])
+                user.save()
+
+                customer_data = {
+                    'first_name': request.data.get('first_name'),
+                    'last_name': request.data.get('last_name', ''),
+                    'email': request.data.get('email', ''),
+                    'phone_number': request.data.get('phone_number'),
+                    'address': request.data.get('address'),
+                    'user': user.id  # Associate the customer with the newly created user
+                }
+
+                serializer = CustomerSerializer(data=customer_data)
+                if serializer.is_valid():
+                    customer = serializer.save()
+                    response_data = {
+                        "message": "Customer created successfully",
+                        "customer_id": customer.id  # Return the user's ID in the response
+                    }
+                    return JsonResponse(response_data, status=status.HTTP_201_CREATED)
+                else:
+                    return JsonResponse(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            print(str(e))
+            return JsonResponse({"message": "Error creating customer"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class CustomerDetail(APIView):

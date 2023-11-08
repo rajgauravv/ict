@@ -1,0 +1,56 @@
+/* FoodPurchaseComponent.css */
+
+.food-purchase-container {
+  background-color: #f0f0f0;
+  padding: 20px;
+  border-radius: 8px;
+  width: 400px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.food-purchase-container h1 {
+  font-size: 24px;
+  color: #333;
+}
+
+.purchase-form {
+  background-color: #fff;
+  padding: 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin: 20px 0;
+}
+
+.purchase-form label {
+  display: block;
+  margin: 8px 0;
+}
+
+.purchase-form select,
+.purchase-form input[type="number"] {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.purchase-form button {
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 10px 20px;
+  margin-top: 10px;
+  cursor: pointer;
+}
+
+.purchase-response {
+  margin-top: 20px;
+}
+
+.purchase-response h3 {
+  font-size: 18px;
+  font-weight: bold;
+  margin-top: 10px;
+}

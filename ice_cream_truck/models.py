@@ -16,7 +16,7 @@ class BaseIceCreamTruckItemFields(models.Model):
 class IceCream(BaseIceCreamTruckItemFields):
 
     def __str__(self):
-        print(self.name)
+        return self.name
 
 
 class IceCreamFlavor(models.Model):

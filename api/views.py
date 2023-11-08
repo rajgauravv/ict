@@ -52,7 +52,7 @@ class BuyFoodView(APIView):
 
                     return Response({"message": "ENJOY!"}, status=status.HTTP_201_CREATED)
                 else:
-                    return Response({"message": "SORRY!"}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response({"message": "SORRY!"}, status=status.HTTP_200_OK)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Customer.DoesNotExist:
             return Response({"error": "Customer not found"}, status=status.HTTP_400_BAD_REQUEST)
@@ -75,11 +75,12 @@ class GetInventoryView(APIView):
             snack_bar_data = InventorySerializer(snack_bars, many=True).data
 
             total_revenue = Customer.objects.aggregate(total_revenue=Sum('total_spent'))['total_revenue'] or 0
-
             inventory_data = {
-                "ice_creams": ice_cream_data,
-                "shaved_ice": shaved_ice_data,
-                "snack_bars": snack_bar_data,
+                "stock": {
+                    "ice_cream": ice_cream_data,
+                    "shaved_ice": shaved_ice_data,
+                    "snack_bars": snack_bar_data
+                },
                 "total_revenue": total_revenue
             }
             return Response(inventory_data, status=status.HTTP_200_OK)
