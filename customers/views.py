@@ -1,6 +1,7 @@
 from django.contrib.auth.models import User
 from django.db import transaction
 from django.shortcuts import render
+from drf_yasg.utils import swagger_auto_schema
 
 # Create your views here.
 from rest_framework.views import APIView
@@ -12,11 +13,25 @@ from django.http import JsonResponse
 
 
 class CustomerList(APIView):
+
+    @swagger_auto_schema(
+        responses={
+            200: "List of customers retrieved successfully.",
+        },
+    )
     def get(self, request):
         customers = Customer.objects.all()
         serializer = CustomerSerializer(customers, many=True)
         return Response(serializer.data)
 
+    @swagger_auto_schema(
+        request_body=CustomerSerializer,
+        responses={
+            201: "Customer created successfully.",
+            200: "Invalid request data or user with this phone number already exists.",
+            500: "Internal Server Error.",
+        },
+    )
     def post(self, request):
         customer_data = {
             'first_name': request.data.get('first_name'),
@@ -99,3 +114,5 @@ class CustomerDetail(APIView):
             customer.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(status=status.HTTP_404_NOT_FOUND)
+
+CustomerDetail.swagger_schema = None

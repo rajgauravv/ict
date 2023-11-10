@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'api',
     'customers',
+    'drf_yasg',
     'ice_cream_truck',
     'rest_framework',
     'corsheaders',
