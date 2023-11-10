@@ -9,3 +9,6 @@ from .serializers import BaseIceCreamTruckItemFieldsSerializer
 class BaseIceCreamTruckViewSet(viewsets.ModelViewSet):
     queryset = BaseIceCreamTruckItemFields.objects.all()
     serializer_class = BaseIceCreamTruckItemFieldsSerializer
+
+
+BaseIceCreamTruckViewSet.swagger_schema = None

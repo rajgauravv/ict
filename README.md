@@ -61,7 +61,10 @@ __*Frontend*__
 2. Write ```npm start```
 
 
-#### Open a browser and go to ```http://localhost:3000```
+## For Api documentation - Swagger
+#### Open a browser and go to ```http://localhost:3000/swagger/```
+## Access API 
+#### Open a browser and go to ```http://localhost:3000/api/buy_food```
 
 ## Testing :hourglass:
 

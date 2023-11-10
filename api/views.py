@@ -1,4 +1,6 @@
 from django.db.models import Sum
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -19,11 +21,31 @@ class BuyFoodView(APIView):
     {
         "customer_id": 1,
         "food_type": "ice_cream",
-        "quantity": 2
-        "flavors": "Chocolate,
-        "name":"Vanilla Ice Cream
+        "quantity": 2,
+        "flavor": "Chocolate",
+        "name": "Vanilla Ice Cream"
     }
     """
+
+    @swagger_auto_schema(
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'customer_id': openapi.Schema(type=openapi.TYPE_INTEGER),
+                'food_type': openapi.Schema(type=openapi.TYPE_STRING),
+                'quantity': openapi.Schema(type=openapi.TYPE_INTEGER),
+                'flavor': openapi.Schema(type=openapi.TYPE_STRING),
+                'name': openapi.Schema(type=openapi.TYPE_STRING),
+            },
+            required=['customer_id', 'food_type', 'quantity', 'name', 'flavor'],
+        ),
+        responses={
+            201: "Purchase successful. Enjoy!",
+            200: "Purchase failed. Sorry!",
+            400: "Invalid request data or customer not found.",
+            500: "Internal Server Error."
+        },
+    )
     def post(self, request):
         serializer = FoodPurchaseSerializer(data=request.data)
         try:
@@ -65,6 +87,51 @@ class GetInventoryView(APIView):
     """
     API endpoint to get the current inventory of the ice cream truck.
     """
+
+    @swagger_auto_schema(
+        responses={
+            200: openapi.Response(
+                description="Successfully retrieved the current inventory.",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'stock': openapi.Schema(type=openapi.TYPE_OBJECT),
+                        'total_revenue': openapi.Schema(type=openapi.TYPE_NUMBER),
+                        'flavors': openapi.Schema(type=openapi.TYPE_ARRAY,
+                                                  items=openapi.Schema(type=openapi.TYPE_STRING)),
+                    },
+                ),
+                examples={
+                    'application/json': {
+                        'stock': {
+                            'ice_cream': [
+                                {
+                                    'food_type': 'ice_cream',
+                                    'name': 'Vanilla',
+                                    'flavors': ['Chocolate'],
+                                    'price': 3.50,
+                                    'quantity': 10,
+                                },
+                            ],
+                            'snack_bar': [
+                                {
+                                    'food_type': 'snack_bar',
+                                    'name': 'Vanilla',
+                                    'flavors': ['Chocolate'],
+                                    'price': 3.50,
+                                    'quantity': 10,
+                                },
+                            ],
+                            # ... other different food types
+                        },
+                        'total_revenue': 150.0,
+                        'flavors': ['Chocolate', 'Vanilla', 'Strawberry'],
+                    }
+                },
+            ),
+            400: "Invalid request or food items not found.",
+        },
+    )
     def get(self, request):
         try:
             queryset = BaseIceCreamTruckItemFields.objects.all().order_by('food_type')
