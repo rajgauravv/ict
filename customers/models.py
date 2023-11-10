@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 
 class Customer(models.Model):
     """
-    To keep track of all customers
+    To keep track of all customers and total spent
     """
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     first_name = models.CharField(max_length=100)

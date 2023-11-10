@@ -4,3 +4,6 @@ venv
 static/
 db.sqlite3
 .idea
+/node_modules
+node_modules/
+public/

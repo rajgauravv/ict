@@ -10,13 +10,12 @@ export const createCustomer = (customerData) => {
   return api.post('/customer/', customerData);
 };
 
-export const buyFood = (customer_id, food_type, foodName, quantity) => {
+export const buyFood = (customer_id, food_type, foodName, quantity, flavor) => {
   return api.post('/api/buy_food/', {
     customer_id,
     food_type,
     name: foodName,
     quantity,
+    flavor,
   });
 };
-
-// Define more API endpoints as needed

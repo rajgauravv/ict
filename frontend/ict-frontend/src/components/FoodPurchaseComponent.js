@@ -10,7 +10,9 @@ function FoodPurchaseComponent() {
   const [quantity, setQuantity] = useState(2);
   const [foodTypes, setFoodTypes] = useState([]);
   const [purchaseResponse, setPurchaseResponse] = useState(null);
-  const [foodName, setFoodName] = useState(''); // Initialize foodName state
+  const [foodName, setFoodName] = useState('');
+  const [flavors, setFlavors] = useState([]);
+  const [selectedFlavor, setSelectedFlavor] = useState('');
 
   const handleCustomerCreated = (receivedCustomerID) => {
     if (receivedCustomerID > 0) {
@@ -21,27 +23,33 @@ function FoodPurchaseComponent() {
   };
 
   useEffect(() => {
-    getInventory()
-      .then((response) => {
+    const fetchData = async () => {
+      try {
+        const response = await getInventory(customerID);
         setInventory(response.data);
         if (response.data && response.data.stock) {
           const foodTypes = Object.keys(response.data.stock);
           setFoodTypes(foodTypes);
           if (foodTypes.length > 0) {
-            setFoodType(foodTypes[0]);
-            const names = response.data.stock[foodType].map((item) => item.name);
-            setFoodName(names[0]);
+            setFoodType((prevFoodType) => {
+              const selectedFoodType = foodTypes.includes(prevFoodType) ? prevFoodType : foodTypes[0];
+              setFoodName(response.data.stock[selectedFoodType]?.[0]?.name || '');
+              setFlavors(response.data.flavors || []);
+              return selectedFoodType;
+            });
           }
         }
-      })
-      .catch((error) => {
+      } catch (error) {
         console.error('Inventory fetch error:', error);
-      });
-  }, [foodType]);
+      }
+    };
+
+    fetchData();
+  }, [customerID]);
 
   const handlePurchase = () => {
     if (customerID && foodType && quantity && foodName) {
-      buyFood(customerID, foodType, foodName, quantity) // Use foodName instead of name
+      buyFood(customerID, foodType, foodName, quantity, selectedFlavor)
         .then((response) => {
           setPurchaseResponse(response.data);
         })
@@ -50,6 +58,7 @@ function FoodPurchaseComponent() {
         });
     }
   };
+
 
   return (
     <div className="food-purchase-container">
@@ -80,9 +89,21 @@ function FoodPurchaseComponent() {
               <select
                 value={foodName}
                 onChange={(e) => setFoodName(e.target.value)}>
-                {inventory.stock[foodType].map((item) => (
+                {inventory.stock[foodType]?.map((item) => (
                   <option key={item.name} value={item.name}>
                     {item.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Flavor:
+              <select
+                value={selectedFlavor}
+                onChange={(e) => setSelectedFlavor(e.target.value)}>
+                {flavors.map((flavor) => (
+                  <option key={flavor} value={flavor}>
+                    {flavor}
                   </option>
                 ))}
               </select>

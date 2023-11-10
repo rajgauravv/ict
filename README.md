@@ -27,6 +27,8 @@ This is a Django web application for managing an ice cream truck business. It al
     ```shell
     pip install -r requirements.txt
 
+## _***Note: Either go by below setup or directly go to Docker setup***_
+
 ### Django project setup
 1. Use python manage.py migrate
 2. Use```python manage.py collectstatic --noinput```
@@ -43,11 +45,23 @@ load_ice_cream_data()
 load_shaved_ice_data()
 load_snack_bar_data()
 ```
+
+
 _**Note: Make 2 users with 1 user being admin and 1 without admin**_
 
 ## Running the project :running:
+__*Backend*__
 
 Now run the app using command ```python manage.py runserver```
+
+__*Frontend*__ 
+
+1. Go in React directory structure
+```cd ict/frontend/ict-frontend/```
+2. Write ```npm start```
+
+
+#### Open a browser and go to ```http://localhost:3000```
 
 ## Testing :hourglass:
 
@@ -55,12 +69,10 @@ For testing run command ```python manage.py test api.tests```
 For testing run command ```python manage.py test ice_cream_truck.tests```
 
 ## Docker Setup (Optional)
-1. Build the Docker image:
-   ```bash
-   docker build -t ice-cream-truck-app .
-2. Run the Docker container:
-   ```bash
-   docker run -p 8000:8000 ice-cream-truck-app
+Build the Docker image for both BE and FE:
+```bash
+docker-compose up --build
+```
 
 ## Contributing :handshake:
 Feel free to contribute to this project by creating pull requests. Your contributions are greatly appreciated!

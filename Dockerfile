@@ -22,8 +22,16 @@ COPY . /app/
 RUN /env/bin/python manage.py collectstatic --no-input
 RUN /env/bin/python manage.py migrate
 
-# Expose the application's port
+# Initialize customer and Ice cream models
+RUN /env/bin/python manage.py shell -c "from customers.initialize_data import load_customers_data; load_customers_data()"
+RUN /env/bin/python manage.py shell -c "from ice_cream_truck.initialize_data import *; load_ice_cream_data();load_shaved_ice_data();load_snack_bar_data();"
+ENV DJANGO_SUPERUSER_USERNAME=admin
+ENV DJANGO_SUPERUSER_PASSWORD=admin123
+ENV DJANGO_SUPERUSER_EMAIL=admin@example.com
+RUN /env/bin/python manage.py createsuperuser --noinput
+
 EXPOSE 8000
 
-# Run the application using Gunicorn
+# Runing application
 CMD ["/env/bin/gunicorn", "--workers=2", "ict.wsgi:application", "--bind", "0.0.0.0:8000"]
+# CMD ["/env/bin/python", "/app/manage.py","runserver","0.0.0.0:8000"]

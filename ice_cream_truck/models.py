@@ -10,6 +10,15 @@ class FoodType:
     )
 
 
+class FlavorType:
+    FLAVOR_CHOICES = (
+        ('Chocolate', 'Chocolate'),
+        ('Pistachio', 'Pistachio'),
+        ('Strawberry', 'Strawberry'),
+        ('Mint', 'Mint'),
+    )
+
+
 class BaseIceCreamTruckItemFields(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True, null=True)
@@ -31,7 +40,11 @@ class Flavor(models.Model):
     Chocolate, Pistachio, Strawberry and Mint.
     """
     food_item = models.ForeignKey(BaseIceCreamTruckItemFields, on_delete=models.CASCADE, related_name='flavors')
-    name = models.CharField(max_length=50)
+    name = models.CharField(
+        max_length=20,
+        choices=FlavorType.FLAVOR_CHOICES,
+        default='Chocolate'
+    )
 
     def __str__(self):
-        return self.name
+        return "Flavor name{}".format(self.name)

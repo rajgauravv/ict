@@ -5,7 +5,7 @@ def load_ice_cream_data():
     vanilla_ice_cream = BaseIceCreamTruckItemFields(name="Vanilla Ice Cream", description="Classic vanilla flavor", price=2.50, quantity=10, food_type='ice_cream')
     vanilla_ice_cream.save()
 
-    vanilla_flavor = Flavor(food_item=vanilla_ice_cream, name="Vanilla")
+    vanilla_flavor = Flavor(food_item=vanilla_ice_cream, name="Chocolate")
     vanilla_flavor.save()
 
 
