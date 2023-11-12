@@ -13,6 +13,8 @@ function FoodPurchaseComponent() {
   const [foodName, setFoodName] = useState('');
   const [flavors, setFlavors] = useState([]);
   const [selectedFlavor, setSelectedFlavor] = useState('');
+  const [availableNames, setAvailableNames] = useState([]);
+
 
   const handleCustomerCreated = (receivedCustomerID) => {
     if (receivedCustomerID > 0) {
@@ -22,21 +24,25 @@ function FoodPurchaseComponent() {
     }
   };
 
+
   useEffect(() => {
+    setFoodName('');
+    setAvailableNames([]);
+
     const fetchData = async () => {
       try {
         const response = await getInventory(customerID);
+
         setInventory(response.data);
         if (response.data && response.data.stock) {
           const foodTypes = Object.keys(response.data.stock);
           setFoodTypes(foodTypes);
           if (foodTypes.length > 0) {
-            setFoodType((prevFoodType) => {
-              const selectedFoodType = foodTypes.includes(prevFoodType) ? prevFoodType : foodTypes[0];
-              setFoodName(response.data.stock[selectedFoodType]?.[0]?.name || '');
-              setFlavors(response.data.flavors || []);
-              return selectedFoodType;
-            });
+            const selectedFoodType = foodTypes.includes(foodType) ? foodType : foodTypes[0];
+            setFoodType(selectedFoodType);
+            setAvailableNames(response.data.stock[selectedFoodType]?.map((item) => item.name) || []);
+            setFlavors(response.data.flavors || []);
+            setSelectedFlavor('');
           }
         }
       } catch (error) {
@@ -45,20 +51,31 @@ function FoodPurchaseComponent() {
     };
 
     fetchData();
-  }, [customerID]);
+  }, [customerID, foodType]);
+
+
 
   const handlePurchase = () => {
-    if (customerID && foodType && quantity && foodName) {
-      buyFood(customerID, foodType, foodName, quantity, selectedFlavor)
-        .then((response) => {
-          setPurchaseResponse(response.data);
-        })
-        .catch((error) => {
-          console.error('Purchase error:', error);
-        });
-    }
-  };
-
+    console.log('Purchase button clicked');
+    console.log('available names',availableNames);
+    console.log('Purchase button clicked',customerID);
+    console.log('Purchase button clicked',foodType);
+    console.log('Purchase button quantity',quantity);
+    console.log('Purchase button foodName',foodName);
+    const selectedFoodName = foodName || (availableNames.length > 0 ? availableNames[0] : 'DefaultName');
+    console.log(selectedFoodName);
+    if (customerID && foodType && quantity && selectedFoodName) {
+    console.log('Making API call...');
+    buyFood(customerID, foodType, selectedFoodName, quantity, selectedFlavor)
+      .then((response) => {
+        console.log('API response:', response);
+        setPurchaseResponse(response.data);
+      })
+      .catch((error) => {
+        console.error('Purchase error:', error);
+      });
+  }
+};
 
   return (
     <div className="food-purchase-container">
@@ -86,21 +103,53 @@ function FoodPurchaseComponent() {
             </label>
             <label>
               Name:
-              <select
+            {/*  <select*/}
+            {/*  value={foodName}*/}
+            {/*  onChange={(e) => setFoodName(e.target.value)}*/}
+            {/*>*/}
+            {/*  {availableNames.map((name, index) => (*/}
+            {/*    <option key={index} value={name}>*/}
+            {/*      {name}*/}
+            {/*    </option>*/}
+            {/*  ))}*/}
+            {/*</select>*/}
+              <select id={'foodName'}
                 value={foodName}
-                onChange={(e) => setFoodName(e.target.value)}>
-                {inventory.stock[foodType]?.map((item) => (
-                  <option key={item.name} value={item.name}>
-                    {item.name}
-                  </option>
+                onChange={(e) => {
+                  console.log('Selected value:', e.target.value);
+                  console.log('Aavaialble names',availableNames);
+                  setFoodName(e.target.value);
+                }}
+              >
+                {Array.from(new Set(availableNames)).map((name) => (
+              <option key={name} value={name}>
+                {name}
+              </option>
                 ))}
               </select>
+              {/*<select*/}
+              {/*  value={foodName}*/}
+              {/*  onChange={(e) => {*/}
+              {/*    console.log('Selected value:', e.target.value);*/}
+              {/*    setFoodName(e.target.value);*/}
+              {/*  }}*/}
+              {/*>*/}
+              {/*  {availableNames.map((name, index) => (*/}
+              {/*    <option key={index} value={name}>*/}
+              {/*      {name}*/}
+              {/*    </option>*/}
+              {/*  ))}*/}
+              {/*</select>*/}
             </label>
             <label>
               Flavor:
               <select
                 value={selectedFlavor}
-                onChange={(e) => setSelectedFlavor(e.target.value)}>
+                onChange={(e) => {
+                  console.log(foodName);
+                  console.log(typeof(foodName));
+                  setSelectedFlavor(e.target.value);}}
+                  >
                 {flavors.map((flavor) => (
                   <option key={flavor} value={flavor}>
                     {flavor}
@@ -116,7 +165,7 @@ function FoodPurchaseComponent() {
                 onChange={(e) => setQuantity(e.target.value)}
               />
             </label>
-            <button onClick={handlePurchase}>Purchase Food</button>
+          <button onClick={handlePurchase}>Purchase Food</button>
           </div>
           {purchaseResponse && (
             <div className="purchase-response">

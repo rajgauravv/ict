@@ -21,9 +21,9 @@ class BuyFoodView(APIView):
     {
         "customer_id": 1,
         "food_type": "ice_cream",
-        "quantity": 2,
+        "quantity": 1,
         "flavor": "Chocolate",
-        "name": "Vanilla Ice Cream"
+        "name": "Plain Ice Cream"
     }
     """
 

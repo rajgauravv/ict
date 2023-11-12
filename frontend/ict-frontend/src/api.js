@@ -10,11 +10,11 @@ export const createCustomer = (customerData) => {
   return api.post('/customer/', customerData);
 };
 
-export const buyFood = (customer_id, food_type, foodName, quantity, flavor) => {
+export const buyFood = (customer_id, food_type, selectedFoodName, quantity, flavor) => {
   return api.post('/api/buy_food/', {
     customer_id,
     food_type,
-    name: foodName,
+    name: selectedFoodName,
     quantity,
     flavor,
   });
