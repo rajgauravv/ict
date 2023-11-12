@@ -62,7 +62,7 @@ __*Frontend*__
 
 
 ## For Api documentation - Swagger
-#### Open a browser and go to ```http://localhost:3000/swagger/```
+#### Open a browser and go to ```http://localhost:8000/swagger/```
 ## Access API 
 #### Open a browser and go to ```http://localhost:3000/api/buy_food```
 

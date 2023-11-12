@@ -2,13 +2,13 @@ from .models import BaseIceCreamTruckItemFields, Flavor
 
 
 def load_ice_cream_data():
-    vanilla_ice_cream = BaseIceCreamTruckItemFields(name="Ice Cream", description="Classic vanilla flavor", price=2.50, quantity=20, food_type='ice_cream')
+    vanilla_ice_cream = BaseIceCreamTruckItemFields(name="Vanilla and Chocolate Cream", description="Classic vanilla flavor", price=2.50, quantity=20, food_type='ice_cream')
     vanilla_ice_cream.save()
 
     vanilla_flavor = Flavor(food_item=vanilla_ice_cream, name="Chocolate")
     vanilla_flavor.save()
 
-    vanilla_ice_cream2 = BaseIceCreamTruckItemFields(name="Ice Cream", description="Strawberry flavor", price=2.50, quantity=10, food_type='ice_cream')
+    vanilla_ice_cream2 = BaseIceCreamTruckItemFields(name="Strawberry Cream", description="Strawberry flavor", price=2.50, quantity=10, food_type='ice_cream')
     vanilla_ice_cream2.save()
 
     vanilla_flavor = Flavor(food_item=vanilla_ice_cream2, name="Strawberry")

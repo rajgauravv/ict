@@ -4,7 +4,7 @@ from .models import Customer
 
 def load_customers_data():
     # Create a user for admin
-    admin_user = User.objects.create_user(username="admin1", password="Admin@123")
+    admin_user = User.objects.create_user(username="1234567890", password="Admin@123")
     admin_user.save()
 
     # Create a customer with admin user
@@ -21,7 +21,7 @@ def load_customers_data():
 
     # Create more customers
     customer1 = Customer(
-        user=User.objects.create_user(username="customer1", password="Customer@123"),
+        user=User.objects.create_user(username="9876543210", password="Customer@123"),
         first_name="John",
         last_name="Doe",
         email="john@example.com",
@@ -32,7 +32,7 @@ def load_customers_data():
     customer1.save()
 
     customer2 = Customer(
-        user=User.objects.create_user(username="customer2", password="Customer@123"),
+        user=User.objects.create_user(username="5678901234", password="Customer@123"),
         first_name="Jane",
         last_name="Smith",
         email="jane@example.com",
