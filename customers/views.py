@@ -6,9 +6,9 @@ from drf_yasg.utils import swagger_auto_schema
 # Create your views here.
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
-from .models import Customer
-from .serializers import CustomerSerializer
+from rest_framework import status, generics
+from .models import Customer, Purchase
+from .serializers import CustomerSerializer, PurchaseSerializer
 from django.http import JsonResponse
 
 
@@ -54,7 +54,7 @@ class CustomerList(APIView):
                 if not created:
                     customer = Customer.objects.filter(user_id=user.id).last()
                     return Response({"message": "User with this phone number already exists.",
-                                    "customer_id": customer.id},
+                                     "customer_id": customer.id},
                                     status=status.HTTP_200_OK)
 
                 user.set_password(user_data['password'])
@@ -115,4 +115,15 @@ class CustomerDetail(APIView):
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(status=status.HTTP_404_NOT_FOUND)
 
+
 CustomerDetail.swagger_schema = None
+
+
+class PurchaseList(generics.ListCreateAPIView):
+    queryset = Purchase.objects.all()
+    serializer_class = PurchaseSerializer
+
+
+class PurchaseDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Purchase.objects.all()
+    serializer_class = PurchaseSerializer

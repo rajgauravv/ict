@@ -1,8 +1,12 @@
-from django.db.models import Sum
+import decimal
+import traceback
+
+from django.db import transaction
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 
-from rest_framework.views import APIView
+
+from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework import status
 
@@ -10,22 +14,11 @@ from rest_framework import status
 from ice_cream_truck.models import BaseIceCreamTruckItemFields, FlavorType
 from ice_cream_truck.serializers import BaseIceCreamTruckItemFieldsSerializer
 from .serializers import FoodPurchaseSerializer
-from customers.models import Customer
+from customers.models import Customer, Purchase, Order
 
 
-class BuyFoodView(APIView):
-    """
-    API endpoint to purchase a specific food item from the ice cream truck.
-
-    Example POST data:
-    {
-        "customer_id": 1,
-        "food_type": "ice_cream",
-        "quantity": 1,
-        "flavor": "Chocolate",
-        "name": "Plain Ice Cream"
-    }
-    """
+class BuyFoodView(generics.CreateAPIView):
+    serializer_class = FoodPurchaseSerializer
 
     @swagger_auto_schema(
         request_body=openapi.Schema(
@@ -41,120 +34,101 @@ class BuyFoodView(APIView):
         ),
         responses={
             201: "Purchase successful. Enjoy!",
-            200: "Purchase failed. Sorry!",
-            400: "Invalid request data or customer not found.",
-            500: "Internal Server Error."
+            200: "Purchase failed. Sorry!"
         },
     )
-    def post(self, request):
-        serializer = FoodPurchaseSerializer(data=request.data)
-        try:
-            flavors = request.data.get('flavor','')
-            if serializer.is_valid():
-                serialized_data = serializer.data
-                customer_id = serialized_data['customer_id']
-                food_type = serialized_data['food_type']
-                name = serialized_data['name']
-                quantity = serialized_data['quantity']
+    def create(self, request, *args, **kwargs):
+        """
 
-                customer = Customer.objects.get(id=customer_id)
+        :param request:
+        :param args:
+        :param kwargs:
+        :return: Enjoy/Sorry
+        """
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
 
-                food_item = BaseIceCreamTruckItemFields.objects.filter(food_type=food_type, name=name, flavors__name=flavors)
+        if serializer.instance:
+            return Response({"message": "ENJOY!"}, status=status.HTTP_201_CREATED)
+        else:
+            return Response({"message": "SORRY!"}, status=status.HTTP_200_OK)
 
-                if food_item.count() > 0 and food_item[0].quantity >= quantity:
-                    food_item = food_item[0]
-                    total_price = food_item.price * quantity
-                    food_item.quantity -= quantity
-                    food_item.save()
+    def perform_create(self, serializer):
+        """
 
-                    customer.total_spent += total_price
-                    customer.save()
+        :param serializer:
+        :return: True/False for serializer.instance
+        """
+        customer_id = serializer.validated_data['customer_id']
+        food_type = serializer.validated_data['food_type']
+        name = serializer.validated_data['name']
+        quantity = serializer.validated_data['quantity']
+        flavor = self.request.data.get('flavor', None)
 
-                    return Response({"message": "ENJOY!"}, status=status.HTTP_201_CREATED)
-                else:
-                    return Response({"message": "SORRY!"}, status=status.HTTP_200_OK)
+        customer = Customer.objects.get(id=customer_id)
 
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        except Customer.DoesNotExist:
-            return Response({"error": "Customer not found"}, status=status.HTTP_400_BAD_REQUEST)
-        except BaseIceCreamTruckItemFields.DoesNotExist:
-            return Response({"error": "Food item not found"}, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            return Response({"error": "Internal Server Error"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        food_item = BaseIceCreamTruckItemFields.objects.filter(food_type=food_type, name=name, flavors__name=flavor)
+
+        if food_item.exists() and food_item[0].quantity >= quantity:
+            food_item = food_item[0]
+            total_price = food_item.price * quantity
+            food_item.quantity -= quantity
+
+            with transaction.atomic():
+                order, created = Order.objects.select_for_update().get_or_create(
+                    customer=customer,
+                    total_amount=total_price
+                )
+                order.save()
+
+                purchase = Purchase.objects.create(
+                    customer=customer,
+                    item=food_item,
+                    flavor=food_item.flavors.first() if flavor else None,
+                    quantity=quantity,
+                    total_amount=total_price
+                )
+
+                order.purchases.add(purchase)
+                order.save()
+
+                food_item.save()
+
+            serializer.instance = purchase
+            return purchase
+        else:
+            print("Quantity not sufficient")
+            traceback.print_exc()
+            # set instance to None, If purchase is not successful.
+            serializer.instance = None
 
 
-class GetInventoryView(APIView):
+class GetInventoryView(generics.ListAPIView):
     """
-    API endpoint to get the current inventory of the ice cream truck.
+    Get Inventory details - Available stock
     """
+    serializer_class = BaseIceCreamTruckItemFieldsSerializer
+    queryset = BaseIceCreamTruckItemFields.objects.all().order_by('food_type')
 
-    @swagger_auto_schema(
-        responses={
-            200: openapi.Response(
-                description="Successfully retrieved the current inventory.",
-                schema=openapi.Schema(
-                    type=openapi.TYPE_OBJECT,
-                    properties={
-                        'stock': openapi.Schema(type=openapi.TYPE_OBJECT),
-                        'total_revenue': openapi.Schema(type=openapi.TYPE_NUMBER),
-                        'flavors': openapi.Schema(type=openapi.TYPE_ARRAY,
-                                                  items=openapi.Schema(type=openapi.TYPE_STRING)),
-                    },
-                ),
-                examples={
-                    'application/json': {
-                        'stock': {
-                            'ice_cream': [
-                                {
-                                    'food_type': 'ice_cream',
-                                    'name': 'Vanilla',
-                                    'flavors': ['Chocolate'],
-                                    'price': 3.50,
-                                    'quantity': 10,
-                                },
-                            ],
-                            'snack_bar': [
-                                {
-                                    'food_type': 'snack_bar',
-                                    'name': 'Vanilla',
-                                    'flavors': ['Chocolate'],
-                                    'price': 3.50,
-                                    'quantity': 10,
-                                },
-                            ],
-                            # ... other different food types
-                        },
-                        'total_revenue': 150.0,
-                        'flavors': ['Chocolate', 'Vanilla', 'Strawberry'],
-                    }
-                },
-            ),
-            400: "Invalid request or food items not found.",
-        },
-    )
-    def get(self, request):
-        try:
-            queryset = BaseIceCreamTruckItemFields.objects.all().order_by('food_type')
-            serializer = BaseIceCreamTruckItemFieldsSerializer(instance=queryset, many=True)
-            output_data = serializer.data
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        serializer = self.get_serializer(queryset, many=True)
 
-            total_revenue = Customer.objects.aggregate(total_revenue=Sum('total_spent'))['total_revenue'] or 0
+        customers = Customer.objects.all()
+        total_revenue = sum(decimal.Decimal(customer.total_spent1) for customer in customers)
 
-            output_data_dict = {}
-            for data in output_data:
-                if data.get('food_type') in output_data_dict:
-                    output_data_dict[data.get('food_type')].append(data)
-                else:
-                    output_data_dict[data.get('food_type')] = [data]
-            flavors = [flavor[0] for flavor in FlavorType.FLAVOR_CHOICES]
-            inventory_data = {
-                "stock": output_data_dict,
-                "total_revenue": total_revenue,
-                "flavors": flavors
-            }
-            return Response(inventory_data, status=status.HTTP_200_OK)
-        except BaseIceCreamTruckItemFields.DoesNotExist:
-            return Response({"error": "Food items not found"}, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            print(str(e))
-            return Response({"error": "Food item not found"}, status=status.HTTP_400_BAD_REQUEST)
+        output_data_dict = {}
+        for data in serializer.data:
+            if data.get('food_type') in output_data_dict:
+                output_data_dict[data.get('food_type')].append(data)
+            else:
+                output_data_dict[data.get('food_type')] = [data]
+        flavors = [flavor[0] for flavor in FlavorType.FLAVOR_CHOICES]
+        inventory_data = {
+            "stock": output_data_dict,
+            "total_revenue": total_revenue,
+            "flavors": flavors
+        }
+
+        return Response(inventory_data, status=status.HTTP_200_OK)
