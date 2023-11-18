@@ -4,7 +4,7 @@ from rest_framework.test import APIClient
 from rest_framework import status
 
 # local imports
-from customers.models import Customer
+from customers.models import Customer, Purchase, Order, Review, Payment, Membership, Promotion
 from ice_cream_truck.models import BaseIceCreamTruckItemFields, Flavor
 
 
@@ -42,8 +42,8 @@ class BuyFoodAPITest(TestCase):
             food_type="snack_bar"
         )
 
-        self.flavors = Flavor.objects.create(food_item= self.ice_cream, name="Chocolate")
-        self.flavors = Flavor.objects.create(food_item= self.snack_bar, name="Pistachio")
+        self.flavors = Flavor.objects.create(food_item=self.ice_cream, name="Chocolate")
+        self.flavors = Flavor.objects.create(food_item=self.snack_bar, name="Pistachio")
 
     def test_buy_ice_cream(self):
         data = {
@@ -62,8 +62,13 @@ class BuyFoodAPITest(TestCase):
         self.ice_cream.refresh_from_db()
         self.assertEqual(self.ice_cream.quantity, 7)
 
+        # self.customer.refresh_from_db()
+        # self.assertEqual(float(self.orders.total_spent), 6.0)
+
+        # Refreshing customer to check if an order and purchase were created
         self.customer.refresh_from_db()
-        self.assertEqual(self.customer.total_spent, 6.0)
+        self.assertEqual(self.customer.orders.count(), 1)
+        self.assertEqual(self.customer.orders.first().purchases.count(), 1)
 
     def test_buy_snack_bar_insufficient_stock(self):
         data = {
@@ -125,3 +130,188 @@ class BuyFoodAPITest(TestCase):
 
         response = self.client.post('/api/buy_food/', data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_purchase_model(self):
+        purchase = Purchase.objects.create(
+            customer=self.customer,
+            item=self.ice_cream,
+            flavor=self.flavors,
+            quantity=2,
+            total_amount=4.0
+        )
+
+        self.assertEqual(str(purchase),
+                         f"{self.customer.first_name} purchased 2 - {self.ice_cream.name}(s) on {purchase.purchase_date}")
+
+    def test_order_model(self):
+        purchase = Purchase.objects.create(
+            customer=self.customer,
+            item=self.ice_cream,
+            flavor=self.flavors,
+            quantity=2,
+            total_amount=4.0
+        )
+
+        order = Order.objects.create(
+            customer=self.customer,
+            total_amount=4.0
+        )
+
+        order.purchases.add(purchase)
+
+        self.assertEqual(str(order), f"Order for {self.customer.first_name} on {order.order_date}")
+
+    def test_review_model(self):
+        review = Review.objects.create(
+            customer=self.customer,
+            food_item=self.ice_cream,
+            rating=4,
+            comment="Delicious!"
+        )
+
+        self.assertEqual(str(review), f"Review by {self.customer} for {self.ice_cream}")
+
+    def test_total_spent_calculation(self):
+        purchase = Purchase.objects.create(
+            customer=self.customer,
+            item=self.ice_cream,
+            flavor=self.flavors,
+            quantity=2,
+            total_amount=4.0
+        )
+
+        order = Order.objects.create(
+            customer=self.customer,
+            total_amount=4.0
+        )
+
+        order.purchases.add(purchase)
+        order.save()
+        # refresh the customer
+        self.customer.refresh_from_db()
+        print("==>",self.customer.first_name)
+        print("==>",self.customer.total_spent1)
+
+        # check if total_spent1 is updated
+        self.assertEqual(float(self.customer.total_spent1), 4.0)
+
+    def test_total_spent_calculation_with_multiple_orders(self):
+        purchase_1 = Purchase.objects.create(
+            customer=self.customer,
+            item=self.ice_cream,
+            flavor=self.flavors,
+            quantity=2,
+            total_amount=4.0
+        )
+
+        purchase_2 = Purchase.objects.create(
+            customer=self.customer,
+            item=self.snack_bar,
+            flavor=self.flavors,
+            quantity=3,
+            total_amount=4.5
+        )
+
+        order_1 = Order.objects.create(
+            customer=self.customer,
+            total_amount=4.0
+        )
+
+        order_2 = Order.objects.create(
+            customer=self.customer,
+            total_amount=4.5
+        )
+
+        # add the purchases to the orders
+        order_1.purchases.add(purchase_1)
+        order_2.purchases.add(purchase_2)
+        order_1.save()
+        order_2.save()
+
+        self.customer.refresh_from_db()
+
+        # total_spent1 is updated
+        self.assertEqual(float(self.customer.total_spent1), 8.5)
+
+    def test_total_spent_calculation_with_promotion(self):
+        promotion = Promotion.objects.create(
+            name="Discount on Ice Cream",
+            description="Get 20% off on Vanilla Ice Cream",
+            discount_percentage=20.0,
+            start_date="2023-01-01T00:00:00Z",
+            end_date="2023-01-31T23:59:59Z"
+        )
+
+        # Create a purchase with the promotion
+        purchase = Purchase.objects.create(
+            customer=self.customer,
+            item=self.ice_cream,
+            quantity=3,
+            total_amount=4.8,  # Original price: 2.0 * 3 = 6.0, Discounted price: 6.0 * 0.8 = 4.8
+            discount=20
+        )
+
+        # Create an order and add the purchase
+        order = Order.objects.create(
+            customer=self.customer,
+            total_amount=4.8
+        )
+        order.purchases.add(purchase)
+        order.save()
+
+        # Refresh the customer to update total_spent1
+        self.customer.refresh_from_db()
+
+        # Check if total_spent1 reflects the discounted amount
+        self.assertEqual(float(self.customer.total_spent1), 4.8)
+
+
+class PaymentModelTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="test_user",
+            password="test_user_password"
+        )
+
+        self.customer = Customer.objects.create(
+            user=self.user,
+            first_name="Test Customer",
+            email="test@example.com",
+            phone_number="1234567891",
+            address="Test Address",
+        )
+
+    def test_payment_creation(self):
+        payment = Payment.objects.create(
+            customer=self.customer,
+            amount=10.0,
+            payment_method="Credit Card"
+        )
+
+        self.assertEqual(str(payment), f"Payment of 10.0 by {self.customer} on {payment.timestamp}")
+
+
+class MembershipModelTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="test_user",
+            password="test_user_password"
+        )
+
+        self.customer = Customer.objects.create(
+            user=self.user,
+            first_name="Test Customer",
+            email="test@example.com",
+            phone_number="1234567891",
+            address="Test Address",
+        )
+
+    def test_membership_creation(self):
+        membership = Membership.objects.create(
+            customer=self.customer,
+            membership_type="standard",
+            start_date="2023-01-01T00:00:00Z",
+            end_date="2024-01-01T00:00:00Z"
+        )
+
+        self.assertEqual(str(membership), f"{self.customer}'s Standard Membership")

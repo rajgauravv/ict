@@ -20,6 +20,7 @@ COPY . /app/
 
 # Collect static files and apply migrations
 RUN /env/bin/python manage.py collectstatic --no-input
+RUN /env/bin/python manage.py makemigrations
 RUN /env/bin/python manage.py migrate
 
 # Initialize customer and Ice cream models
